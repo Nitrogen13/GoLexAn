@@ -1,6 +1,6 @@
 import java.io.File
 
-val letterRegex = Regex("\\w")
+val letterRegex = Regex("[a-zA-Z]")
 val identifier = Regex("[\\w\\d_]")
 val numRegex = Regex("[\\d]")
 val bracketRegex = Regex("[(){}\\[\\]]")
@@ -37,11 +37,29 @@ fun getToken(line: String, pos: Int): String? =
                 } ?: line.sliceWhile(pos, identifier)// identifier
             }
             bracketRegex.matches(line[pos].toString()) -> line[pos].toString()
-            numRegex.matches(line[pos].toString()) -> line.sliceWhile(pos, numRegex) // number
+            numRegex.matches(line[pos].toString()) -> {
+                val num = line.sliceWhile(pos, numRegex)
+                num + when (line[pos + num!!.length]) {
+                    '.', 'e', 'E' -> {
+                        line[pos + num.length].toString() +
+                                when {
+                                    numRegex.matches(line[pos + num.length + 1].toString()) -> line.sliceWhile(pos + num.length + 1, numRegex)
+                                    line[pos + num.length + 1] == '-' -> line.sliceWhile(pos + num.length + 1, numRegex)
+                                    else -> ""
+                                }
+                    }
+                    else -> ""
+                }
+            }// number
             else -> when (line[pos]) {
-                '"' -> line.sliceUpTo(pos, '"') // String
+                '"' -> {
+                    var num = line.sliceUpTo(pos, '"')
+                    while (line[pos + num!!.length - 1] != '"' || line[pos + num.length  - 2] == '\\'){
+                        num += line[pos + num.length]
+                    }
+                    num
+                } // String
                 '\'' -> line.sliceUpTo(pos, '\'') // Chars
-
                 ',' -> ","
                 ';' -> ";"
 
@@ -87,8 +105,17 @@ fun getToken(line: String, pos: Int): String? =
                 }
 
                 '/' -> "/" + when (line[pos + 1]) {
-                // TODO: /* - is part of comment
-                    '/', '=', '*' -> line[pos + 1].toString()
+                    '/' -> {
+                        "/" + line.sliceUpTo(pos + 1, '\n')
+                    }
+                    '*' -> {
+                            var num = "*"
+                            while (line[pos + num.length - 1] != '*' || line[pos + num.length] != '/'){
+                                num += line[pos + num.length + 1]
+                            }
+                            num
+                    }
+                    '=' -> line[pos + 1].toString()
                     else -> ""
                 }
                 '&' -> "&" + when (line[pos + 1]) {
@@ -120,7 +147,6 @@ fun getToken(line: String, pos: Int): String? =
             }
         }
 
-
 private fun String.sliceUpTo(startIndex: Int, matcher: (Char) -> Boolean): String? {
     var i = startIndex + 1
     while (i < length && !matcher(get(i)))
@@ -140,6 +166,7 @@ private fun String.sliceUpTo(startIndex: Int, char: Char): String? =
 
 private fun String.sliceUpTo(startIndex: Int, regex: Regex): String? =
         sliceUpTo(startIndex) { regex.matches(it.toString()) }
+
 
 private fun String.sliceWhile(startIndex: Int, char: Char): String? =
         sliceWhile(startIndex) { it == char }

@@ -25,4 +25,4 @@ func readFile(path string) {
 func main() {
 	fmt.Println("Hello World!")
 	readFile("e:/1.html")
-}
+}ufufuf

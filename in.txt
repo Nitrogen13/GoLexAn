@@ -1,6 +1,6 @@
 // base_file
 package main
-
+123456
 import (
 	"fmt"
 	"log"

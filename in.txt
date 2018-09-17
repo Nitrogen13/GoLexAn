@@ -165,7 +165,7 @@ func main() {
 		},
 	}
 
-	err := tpl.Execute(os.Stdout, m)
+	err := *tpl.Execute(os.Stdout, m)
 	if err != nil {
 		log.Fatalln(err)
 	}

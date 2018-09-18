@@ -4,7 +4,7 @@ val letterRegex = Regex("[a-zA-Z]")
 val identifier = Regex("[a-zA-Z][\\w\\d_]*")
 val numRegex = Regex("\\d")
 val bracketRegex = Regex("[(){}\\[\\]]")
-val whiteSpaceRegex = Regex("[\\s]")
+val whiteSpaceRegex = Regex("\\s+")
 val pointerRegex = Regex("\\*[a-zA-Z][\\w\\d_]*")
 
 val keywords = listOf(
@@ -88,7 +88,7 @@ fun main(args: Array<String>) {
     var pos = 0
     do {
         val token = getToken(lines, pos)
-        println(dict(token))
+        println("${dict(token)} ($token)")
         token?.length?.let { pos += it }
     } while (token?.isNotEmpty() == true && pos < lines.length)
 }
@@ -108,8 +108,10 @@ fun getToken(line: String, pos: Int): String? =
                     '.', 'e', 'E' -> {
                         line[pos + num.length].toString() +
                                 when {
-                                    numRegex.matches(line[pos + num.length + 1].toString()) -> line.sliceWhile(pos + num.length + 1, numRegex)
-                                    line[pos + num.length + 1] == '-' -> line.sliceWhile(pos + num.length + 1, numRegex)
+                                    numRegex.matches(line[pos + num.length + 1].toString()) ->
+                                        line.sliceWhile(pos + num.length + 1, numRegex)
+                                    line[pos + num.length + 1] == '-' ->
+                                        line.sliceWhile(pos + num.length + 1, numRegex)
                                     else -> ""
                                 }
                     }

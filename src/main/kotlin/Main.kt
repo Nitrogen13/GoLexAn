@@ -1,11 +1,16 @@
 import java.io.File
 
-val letterRegex = Regex("[a-zA-Z]")
-val identifier = Regex("[a-zA-Z][\\w\\d_]*")
-val numRegex = Regex("\\d")
+val letterRegex = Regex("[a-zA-Z_]")
+val identifier = Regex("[a-zA-Z_][\\w\\d_]*")
+val numRegex = Regex("\\d")  // single character
+val numberRegex = Regex("\\d*[.eE\\-+i\\d]*\\d+i?")
+val hexNumRegex = Regex("[0-9xa-fA-F]")
+val hexNumberRegex = Regex("0x[0-9a-fA-F]*")
 val bracketRegex = Regex("[(){}\\[\\]]")
 val whiteSpaceRegex = Regex("\\s+")
-val pointerRegex = Regex("\\*[a-zA-Z][\\w\\d_]*")
+val pointerRegex = Regex("\\*[a-zA-Z][\\w\\d_]*") // probably pointer is just identifier
+val stringRegex = Regex("\"[\\d\\D]*\"")
+val commentRegex = Regex("[/]+[\\*]+[^']*") // somehow fix this [^']
 
 val keywords = listOf(
         "break", "default", "func", "interface", "select",
@@ -71,13 +76,13 @@ val dictionary = hashMapOf(
         "-=" to "Assign operator",
         "%=" to "Assign operator",
         "*=" to "Assign operator",
-        ">>=" to "Assign operator", // don't know what is this operator exactly
+        ">>=" to "Assign operator", //  don't know what is this operator exactly
         "^=" to "Assign operator",
         "&=" to "Assign operator",
         "|=" to "Assign operator",
         "&^=" to "Assign operator",
         "..." to "3 dot operator",
-        "<-" to "Arrow",
+        "<-" to "Arrow", //  don't know what is this operator exactly
         "++" to "Increase",
         "--" to "Decrease"
 )
@@ -89,6 +94,7 @@ fun main(args: Array<String>) {
     do {
         val token = getToken(lines, pos)
         println("${dict(token)} ($token)")
+
         token?.length?.let { pos += it }
     } while (token?.isNotEmpty() == true && pos < lines.length)
 }
@@ -112,11 +118,16 @@ fun getToken(line: String, pos: Int): String? =
                                         line.sliceWhile(pos + num.length + 1, numRegex)
                                     line[pos + num.length + 1] == '-' ->
                                         line.sliceWhile(pos + num.length + 1, numRegex)
+                                    line[pos + num.length + 1] == '+' ->
+                                        line.sliceWhile(pos + num.length + 1, numRegex)
                                     else -> ""
                                 }
                     }
+                    'x' -> {
+                        "x" + line.sliceWhile(pos + num.length + 1, hexNumRegex)
+                    }
                     else -> ""
-                }
+                } // TODO 12e-1i, 6.67428e-11
             }// number
             else -> when (line[pos]) {
                 '"' -> {
@@ -140,7 +151,7 @@ fun getToken(line: String, pos: Int): String? =
                 }
                 '*' -> "*" + when {
                     line[pos + 1] == '=' -> line[pos + 1].toString()
-                // TODO: Shouldn't it be letterRegexp? Isn't it another token?
+                    // TODO: Shouldn't it be letterRegexp? Isn't it another token?
                     identifier.matches(line[pos + 1].toString()) -> line.sliceWhile(pos + 1, identifier)
                     else -> ""
                 }
@@ -149,7 +160,7 @@ fun getToken(line: String, pos: Int): String? =
                     else -> ""
                 }
 
-            // equals:
+                // equals:
                 '!' -> "!" + when (line[pos + 1]) {
                     '=' -> line[pos + 1].toString()
                     else -> ""
@@ -214,15 +225,18 @@ fun getToken(line: String, pos: Int): String? =
             }
         }
 
-private fun dict(token: String?) : String?{
-    return when{
+private fun dict(token: String?): String? {
+    return when {
         dictionary[token] != null -> dictionary[token]
         bracketRegex.matches(token.toString()) -> "Bracket"
-        numRegex.matches(token.toString()) -> "Number"
-        whiteSpaceRegex.matches(token.toString()) -> "Whitespace or new line or tab"
+        numberRegex.matches(token.toString()) -> "Number"
+        hexNumberRegex.matches(token.toString()) -> "Number"
+        stringRegex.matches(token.toString()) -> "String"
+        whiteSpaceRegex.matches(token.toString()) -> "" // probably we should ignore this
         pointerRegex.matches(token.toString()) -> "Pointer"
         identifier.matches(token.toString()) -> "Identifier"
-        else -> null // this is tab in most of cases TODO somehow handle it
+        commentRegex.matches(token.toString()) -> "" //ignore comments
+        else -> null // TODO somehow handle it
     }
 }
 

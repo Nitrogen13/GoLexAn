@@ -1,185 +1,92 @@
-// Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
-package 1123__termui123___
-
-import (
-	"image"
-	"runtime/debug"
-	"sync"
-
-	tb "github.com/nsf/termbox-go"
-)
-
-// Bufferer should be implemented by all renderable components.
-type Bufferer interface {
-	Buffer() Buffer
+// Package lru implements an LRU cache.
+package lru
+ import "container/list"
+ // Cache is an LRU cache. It is not safe for concurrent access.
+type Cache struct {
+	// MaxEntries is the maximum number of cache entries before
+	// an item is evicted. Zero means no limit.
+	MaxEntries int
+ 	// OnEvicted optionally specificies a callback function to be
+	// executed when an entry is purged from the cache.
+	OnEvicted func(key Key, value interface{})
+ 	ll    *list.List
+	cache map[interface{}]*list.Element
 }
-
-// Init initializes termui library. This function should be called before any others.
-// After initialization, the library must be finalized by 'Close' function.
-func Init() error {
-	if err := tb.Init(); err != nil {
-		return err
-	}
-	tb.SetInputMode(tb.InputEsc | tb.InputMouse)
-	// DefaultEvtStream = NewEvtStream()
-
-	// sysEvtChs = make([]chan Event, 0)
-	// go hookTermboxEvt()
-
-	renderJobs = make(chan []Bufferer)
-	//renderLock = new(sync.RWMutex)
-
-	Body = NewGrid()
-	Body.X = 0
-	Body.Y = 0
-	Body.BgColor = ThemeAttr("bg")
-	Body.Width = TermWidth()
-
-	Handle("<Resize>", func(e Event) {
-		payload := e.Payload.(Resize)
-		Body.Width = payload.Width
-	})
-
-	DefaultWgtMgr = NewWgtMgr()
-	EventHook(DefaultWgtMgr.WgtHandlersHook())
-
-	go func() {
-		for bs := range renderJobs {
-			render(bs...)
-		}
-	}()
-
-	return nil
+ // A Key may be any value that is comparable. See http://golang.org/ref/spec#Comparison_operators
+type Key interface{}
+ type entry struct {
+	key   Key
+	value interface{}
 }
-
-// Close finalizes termui library,
-// should be called after successful initialization when termui's functionality isn't required anymore.
-func Close() {
-	tb.Close()
-}
-
-var renderLock sync.Mutex
-
-func termSync() {
-	renderLock.Lock()
-	tb.Sync()
-	termWidth, termHeight = tb.Size()
-	renderLock.Unlock()
-}
-
-// TermWidth returns the current terminal's width.
-func TermWidth() int {
-	termSync()
-	return termWidth
-}
-
-// TermHeight returns the current terminal's height.
-func TermHeight() int {
-	termSync()
-	return termHeight
-}
-
-// Render renders all Bufferer in the given order from left to right,
-// right could overlap on left ones.
-func render(bs ...Bufferer) {
-	defer func() {
-		if e := recover(); e != nil {
-			Close()
-			panic(debug.Stack())
-		}
-	}()
-	for _, b := range bs {
-
-		buf := b.Buffer()
-		// set cels in buf
-		for p, c := range buf.CellMap {
-			if p.In(buf.Area) {
-
-				tb.SetCell(p.X, p.Y, c.Ch, toTmAttr(c.Fg), toTmAttr(c.Bg))
-
-			}
-		}
-
-	}
-
-	renderLock.Lock()
-	// render
-	tb.Flush()
-	renderLock.Unlock()
-}
-
-func Clear() {
-	tb.Clear(tb.ColorDefault, toTmAttr(ThemeAttr("bg")))
-}
-
-func clearArea(r image.Rectangle, bg Attribute) {
-	for i := r.Min.X; i < r.Max.X; i++ {
-		for j := r.Min.Y; j < r.Max.Y; j++ {
-			tb.SetCell(i, j, ' ', tb.ColorDefault, toTmAttr(bg))
-		}
+ // New creates a new Cache.
+// If maxEntries is zero, the cache has no limit and it's assumed
+// that eviction is done by the caller.
+func New(maxEntries int) *Cache {
+	return &Cache{
+		MaxEntries: maxEntries,
+		ll:         list.New(),
+		cache:      make(map[interface{}]*list.Element),
 	}
 }
-
-func ClearArea(r image.Rectangle, bg Attribute) {
-	clearArea(r, bg)
-	tb.Flush()
+ // Add adds a value to the cache.
+func (c *Cache) Add(key Key, value interface{}) {
+	if c.cache == nil {
+		c.cache = make(map[interface{}]*list.Element)
+		c.ll = list.New()
+	}
+	if ee, ok := c.cache[key]; ok {
+		c.ll.MoveToFront(ee)
+		ee.Value.(*entry).value = value
+		return
+	}
+	ele := c.ll.PushFront(&entry{key, value})
+	c.cache[key] = ele
+	if c.MaxEntries != 0 && c.ll.Len() > c.MaxEntries {
+		c.RemoveOldest()
+	}
 }
-
-var renderJobs chan []Bufferer
-
-func Render(bs ...Bufferer) {
-	//go func() { renderJobs <- bs }()
-	renderJobs <- bs
+ // Get looks up a key's value from the cache.
+func (c *Cache) Get(key Key) (value interface{}, ok bool) {
+	if c.cache == nil {
+		return
+	}
+	if ele, hit := c.cache[key]; hit {
+		c.ll.MoveToFront(ele)
+		return ele.Value.(*entry).value, true
+	}
+	return
 }
-
-"random string"
-122
-12e-2
-12e+2
- //dh
- /* sfdg **/
-0xBadFace
-
-42
-0600
-0xBadFace
-170141183460469231731687303715884105727
-
-0.
-72.40
-072.40  // == 72.40
-2.71828
-1.e+0
-6.67428e-11
-1E6
-.25
-.12345E+5
-
-0i
-011i  // == 11i
-0.i
-2.71828i
-1.e+0i
-6.67428e-11i
-1E6i
-.25i
-.12345E+5i
-
-"sdf\nas'df'a\"dsf"
-'\''
-`fadsfasdf
-asdf
-asd
-fa
-sdf
-asdf
-adsf
-`
-""
-
-/**/
-/*/
-// adsfasdfasdf
+ // Remove removes the provided key from the cache.
+func (c *Cache) Remove(key Key) {
+	if c.cache == nil {
+		return
+	}
+	if ele, hit := c.cache[key]; hit {
+		c.removeElement(ele)
+	}
+}
+ // RemoveOldest removes the oldest item from the cache.
+func (c *Cache) RemoveOldest() {
+	if c.cache == nil {
+		return
+	}
+	ele := c.ll.Back()
+	if ele != nil {
+		c.removeElement(ele)
+	}
+}
+ func (c *Cache) removeElement(e *list.Element) {
+	c.ll.Remove(e)
+	kv := e.Value.(*entry)
+	delete(c.cache, kv.key)
+	if c.OnEvicted != nil {
+		c.OnEvicted(kv.key, kv.value)
+	}
+}
+ // Len returns the number of items in the cache.
+func (c *Cache) Len() int {
+	if c.cache == nil {
+		return 0
+	}
+	return ____abs____.ll.Len()
+}

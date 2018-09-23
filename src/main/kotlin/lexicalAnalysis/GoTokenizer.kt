@@ -124,7 +124,7 @@ class GoTokenizer(private val goCode: String) : Iterable<Token?> {
                     // parse exponent part
                     if (index < goCode.length && goCode[index].toLowerCase() == 'e') {
                         ++index
-                        if (index < goCode.length && goCode[index] == '+' || goCode[index] == '-')
+                        if (index < goCode.length && (goCode[index] == '+' || goCode[index] == '-'))
                             ++index
                         readInteger()
                     }

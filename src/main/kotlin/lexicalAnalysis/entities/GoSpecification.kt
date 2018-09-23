@@ -1,8 +1,8 @@
 package lexicalAnalysis.entities
 
 object GoSpecification {
-    val letter = Regex("[a-zA-Z_]") // allowed first symbol at an identifier
-    val identifier = Regex("\\w") // allowed symbols (other than first one) at an identifier
+    val letter = Regex("[\\p{L}_]") // allowed first symbol at an identifier
+    val identifier = Regex("[\\p{L}\\p{Nd}_]") // allowed symbols (other than first one) at an identifier
     val decimalDigit = Regex("\\d") // decimal digit
     val hexDigit = Regex("[\\da-fA-F]") // hexadecimal digit
     val whiteSpace = Regex("\\s") // whitespace symbol

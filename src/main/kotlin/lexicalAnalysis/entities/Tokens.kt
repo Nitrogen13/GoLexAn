@@ -7,7 +7,11 @@ open class Token(val name: String, val lexeme: String) {
 }
 
 
-class KeywordToken(lexeme: String) : Token("Keyword", lexeme)
+class KeywordToken(lexeme: String) : Token("Keyword", lexeme) {
+    override fun toString(): String {
+        return "Keyword${lexeme.let { lexeme[0].toUpperCase() + lexeme.slice(1 until lexeme.length) }}"
+    }
+}
 
 class IdentifierToken(lexeme: String) : Token("Identifier", lexeme)
 

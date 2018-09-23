@@ -1,4 +1,5 @@
 import lexicalAnalysis.GoTokenizer
+import lexicalAnalysis.entities.CommentToken
 import lexicalAnalysis.entities.WhitespaceToken
 import java.io.File
 
@@ -11,7 +12,7 @@ fun main(args: Array<String>) {
 
     val output = File(OUTPUT_FILE_NAME).bufferedWriter()
     for (token in GoTokenizer(sourceCode)){
-        if (token !is WhitespaceToken){
+        if (token !is WhitespaceToken && token !is CommentToken){
             println(token)
             output.write("$token\n")
         }

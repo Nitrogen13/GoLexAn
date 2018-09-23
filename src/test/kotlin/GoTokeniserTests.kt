@@ -75,4 +75,34 @@ class GoTokeniserTests {
         }
     }
 
+    private val code = mapOf(
+            "++a" to listOf(OperatorToken("++"), IdentifierToken("a")),
+            "[1, 2]" to listOf(
+                    PunctuationToken("["), LiteralToken("1"), PunctuationToken(","),
+                    LiteralToken("2"), PunctuationToken("]")
+            ),
+            "a = b + \"text\"" to listOf(
+                    IdentifierToken("a"), OperatorToken("="), IdentifierToken("b"),
+                    OperatorToken("+"), LiteralToken("\"text\"")
+            ),
+            "import test;" to listOf(
+                    KeywordToken("import"), IdentifierToken("test"), PunctuationToken(";")
+            ),
+            "if n != .12345E+5i { return \"oh no...\" }" to listOf(
+                    KeywordToken("if"), IdentifierToken("n"), OperatorToken("!="),
+                    LiteralToken(".12345E+5i"), PunctuationToken("{"), KeywordToken("return"),
+                    LiteralToken("\"oh no...\""), PunctuationToken("}")
+            )
+    )
+
+    @Test
+    fun codeTest(){
+        code.forEach { code, tokens ->
+            GoTokenizer(code).filter { it !is WhitespaceToken }.forEachIndexed { index, token ->
+                Assertions.assertEquals(tokens[index].lexeme, token?.lexeme)
+                Assertions.assertEquals(tokens[index].name, token?.name)
+            }
+        }
+    }
+
 }

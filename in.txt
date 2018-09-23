@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license that can
 // be found in the LICENSE file.
 
-package 1123__termui123___
+package 1123__teAfAguGi123___
 
 import (
 	"image"
@@ -176,9 +176,13 @@ asd
 fa
 sdf
 asdf
-adsf
 `
 ""
+
+a
+_x9
+ThisVariableIsExported
+αβ
 
 /**/
 /*/

@@ -2,7 +2,7 @@ package lexicalAnalysis
 
 import lexicalAnalysis.entities.*
 
-class GoTokenizer(private val sourceCode: String) : Iterable<Token?> {
+class GoTokenizer(private val goCode: String) : Iterable<Token?> {
 
     /** Position of the tokenizer, after each call of [nextToken] points to the beginning of the next token */
     private var currentPosition = 0
@@ -15,7 +15,7 @@ class GoTokenizer(private val sourceCode: String) : Iterable<Token?> {
             ?.also { currentPosition += it.lexeme.length }
 
     /** @return true if there is more tokens to parse, false otherwise */
-    fun hasNextToken(): Boolean = currentPosition < sourceCode.length
+    fun hasNextToken(): Boolean = currentPosition < goCode.length
 
     /**
      * Parses next token starting from position [pos]
@@ -26,41 +26,41 @@ class GoTokenizer(private val sourceCode: String) : Iterable<Token?> {
             ?: parseIdentifier(pos)
             ?: parseComment(pos)
             ?: parseLiteral(pos)
-            ?: parseOperator(pos)
             ?: parsePunctuation(pos)
+            ?: parseOperator(pos)
 
     /**
      * Parses next whitespace token starting from position [pos]
      * @return [WhitespaceToken] with whitespace symbols if any of them was found, null otherwise
      */
-    private fun parseWhitespace(pos: Int) = sourceCode.sliceWhile(pos, GoSpecification.whiteSpace)
+    private fun parseWhitespace(pos: Int) = goCode.sliceWhile(pos, GoSpecification.whiteSpace)
             ?.let { WhitespaceToken(it) }
 
     /**
      * Parses next keyword starting from position [pos]
      * @return [KeywordToken] with keyword lexeme if any keyword was found, null otherwise
      */
-    private fun parseKeyword(pos: Int) = sourceCode.getFirstMatching(pos, GoSpecification.keywords)
+    private fun parseKeyword(pos: Int) = goCode.getFirstMatching(pos, GoSpecification.keywords)
             ?.let { KeywordToken(it) }
 
     /**
      *  Parses next identifier starting from position [pos]
      *  @return [IdentifierToken] with identifier lexeme if any identifier was found, null otherwise
      */
-    private fun parseIdentifier(pos: Int) = sourceCode.takeIf { GoSpecification.letter.matches(it[pos].toString()) }
-            ?.let { sourceCode.sliceWhile(pos, GoSpecification.identifier) }
+    private fun parseIdentifier(pos: Int) = goCode.takeIf { GoSpecification.letter.matches(it[pos].toString()) }
+            ?.let { goCode.sliceWhile(pos, GoSpecification.identifier) }
             ?.let { IdentifierToken(it) }
 
     /**
      * Parses next identifier starting from position [pos]
      * @return [CommentToken] with comment lexeme if any comment was found, null otherwise
      */
-    private fun parseComment(pos: Int) = when (sourceCode.slice(pos..pos + 1)) {
-        "//" -> sourceCode.sliceUpTo(pos) { index ->
-            sourceCode[index] == '\n' || index == sourceCode.length - 1
+    private fun parseComment(pos: Int) = when (goCode.slice(pos..(pos + 1).coerceAtMost(goCode.length - 1))) {
+        "//" -> goCode.sliceUpTo(pos) { index ->
+            goCode[index] == '\n' || index == goCode.length - 1
         }
-        "/*" -> sourceCode.sliceUpTo(pos) { index ->
-            index > pos + 2 && sourceCode.slice((index - 1)..index) == "*/"
+        "/*" -> goCode.sliceUpTo(pos) { index ->
+            index > pos + 2 && goCode.slice((index - 1)..index) == "*/"
         }
         else -> null
     }?.let { CommentToken(it) }
@@ -70,10 +70,10 @@ class GoTokenizer(private val sourceCode: String) : Iterable<Token?> {
      * @return [LiteralToken] with literal lexeme if any comment was found, null otherwise
      */
     private fun parseLiteral(pos: Int) = when {
-        sourceCode[pos].isDigit() || sourceCode[pos] == '.' -> parseNumber(pos)
-        sourceCode[pos] == '"' -> parseString(pos, '"')
-        sourceCode[pos] == '`' -> parseString(pos, '`')
-        sourceCode[pos] == '\'' -> parseString(pos, '\'')
+        goCode[pos].isDigit() || goCode[pos] == '.' -> parseNumber(pos)
+        goCode[pos] == '"' -> parseString(pos, '"')
+        goCode[pos] == '`' -> parseString(pos, '`')
+        goCode[pos] == '\'' -> parseString(pos, '\'')
         else -> null
     }
 
@@ -81,22 +81,22 @@ class GoTokenizer(private val sourceCode: String) : Iterable<Token?> {
      * Parses next string with given [bound] symbol starting from position [pos]
      * @return [LiteralToken] with string lexeme if any string was found, null if closed string was not found
      */
-    private fun parseString(pos: Int, bound: Char): LiteralToken? = sourceCode.sliceUpTo(pos) { index ->
-        index != pos && sourceCode[index] == bound && sourceCode[index - 1] != '\\'
+    private fun parseString(pos: Int, bound: Char): LiteralToken? = goCode.sliceUpTo(pos) { index ->
+        index != pos && goCode[index] == bound && goCode[index - 1] != '\\'
     }?.let { LiteralToken(it) }
 
     /**
      * Parses next punctuation token starting from position [pos]
      * @return [PunctuationToken] with punctuation lexeme if any punctuation token was found, null otherwise
      */
-    private fun parsePunctuation(pos: Int) = sourceCode.getFirstMatching(pos, GoSpecification.punctuation)
+    private fun parsePunctuation(pos: Int) = goCode.getFirstMatching(pos, GoSpecification.punctuation)
             ?.let { PunctuationToken(it) }
 
     /**
      * Parses next operator starting from position [pos]
      * @return [OperatorToken] with operator lexeme if any operator token was found, null otherwise
      */
-    private fun parseOperator(pos: Int) = sourceCode.getFirstMatching(pos, GoSpecification.operators)
+    private fun parseOperator(pos: Int) = goCode.getFirstMatching(pos, GoSpecification.operators)
             ?.let { OperatorToken(it) }
 
     /**
@@ -104,36 +104,36 @@ class GoTokenizer(private val sourceCode: String) : Iterable<Token?> {
      * @return [LiteralToken] with number lexeme if any number token was found, null otherwise
      */
     private fun parseNumber(pos: Int): LiteralToken? =
-            if (sourceCode.slice(pos..pos + 1).toLowerCase() == "0x") {
-                val hexPart = sourceCode.sliceWhile(pos + 2, GoSpecification.hexDigit)
+            if (goCode.slice(pos..(pos + 1).coerceAtMost(goCode.length - 1)).toLowerCase() == "0x") {
+                val hexPart = goCode.sliceWhile(pos + 2, GoSpecification.hexDigit)
                 hexPart?.let { LiteralToken("0x$it") }
             } else {
                 var index = pos
-                fun readInteger() = sourceCode.sliceWhile(index, GoSpecification.decimalDigit)?.also { index += it.length }
+                fun readInteger() = goCode.sliceWhile(index, GoSpecification.decimalDigit)?.also { index += it.length }
 
                 // parse integer part
                 readInteger()
 
                 // parse floating point part
-                if (sourceCode[index] == '.') {
+                if (index < goCode.length && goCode[index] == '.') {
                     index++
                     readInteger()
                 }
 
-                if (index > pos && (sourceCode[pos].isDigit() || sourceCode[pos + 1].isDigit())) {
+                if (index > pos && (goCode[pos].isDigit() || (pos + 1 < goCode.length) && goCode[pos + 1].isDigit())) {
                     // parse exponent part
-                    if (sourceCode[index].toLowerCase() == 'e') {
+                    if (index < goCode.length && goCode[index].toLowerCase() == 'e') {
                         ++index
-                        if (sourceCode[index] == '+' || sourceCode[index] == '-')
+                        if (index < goCode.length && goCode[index] == '+' || goCode[index] == '-')
                             ++index
                         readInteger()
                     }
 
                     // parse imaginary symbol
-                    if (sourceCode[index] == 'i')
+                    if (index < goCode.length && goCode[index] == 'i')
                         ++index
 
-                    LiteralToken(sourceCode.slice(pos until index))
+                    LiteralToken(goCode.slice(pos until index))
                 } else {
                     null
                 }

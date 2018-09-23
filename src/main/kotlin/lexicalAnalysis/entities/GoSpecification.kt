@@ -10,11 +10,10 @@ object GoSpecification {
 
     /** Keyword lexemes */
     val keywords = listOf(
-            "break", "default", "func", "interface", "select",
-            "case", "defer", "go", "map", "struct",
-            "chan", "else", "goto", "package", "switch",
-            "const", "fallthrough", "if", "range", "type",
-            "continue", "for", "import", "return", "var"
+            "break", "default", "func", "interface", "select", "case",
+            "defer", "goto", "go", "map", "struct", "chan", "else",
+            "package", "switch", "const", "fallthrough", "if", "range",
+            "type", "continue", "for", "import", "return", "var"
     )
 
     /** Punctuation lexemes */

@@ -1,12 +1,14 @@
 package lexicalAnalysis.entities
 
 object GoSpecification {
-    val letter = Regex("[a-zA-Z_]")
-    val identifier = Regex("[a-zA-Z_][\\w\\d_]*")
-    val decimalDigit = Regex("\\d")
-    val hexDigit = Regex("[\\da-fA-F]")
-    val whiteSpace = Regex("\\s+")
+    val letter = Regex("[a-zA-Z_]") // allowed first symbol at an identifier
+    val identifier = Regex("\\w") // allowed symbols (other than first one) at an identifier
+    val decimalDigit = Regex("\\d") // decimal digit
+    val hexDigit = Regex("[\\da-fA-F]") // hexadecimal digit
+    val whiteSpace = Regex("\\s") // whitespace symbol
 
+
+    /** Keyword lexemes */
     val keywords = listOf(
             "break", "default", "func", "interface", "select",
             "case", "defer", "go", "map", "struct",
@@ -15,8 +17,10 @@ object GoSpecification {
             "continue", "for", "import", "return", "var"
     )
 
+    /** Punctuation lexemes */
     val punctuation = listOf("...", ",", ";", "[", "]", "(", ")", "{", "}")
 
+    /** Operator lexemes */
     val operators = listOf(
             ".",
             "!=", "!",
